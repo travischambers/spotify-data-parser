@@ -30,7 +30,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <nav className="p-4 bg-white shadow-md">
           <div className="max-w-4xl mx-auto flex justify-between items-center">
             <Link href="/" className="text-xl font-bold text-blue-600">
-              My App
+              Spotify Streaming Stats Analyzer
             </Link>
           </div>
         </nav>

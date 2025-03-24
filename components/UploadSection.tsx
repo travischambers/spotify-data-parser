@@ -1,49 +1,44 @@
 "use client";
 
 import FileUploadButton from "@/components/FileUploadButton";
-import { Stream } from "@/types";
+import { ExtendedStream } from "@/types";
 import { PiUploadSimpleBold, PiXCircleBold } from "react-icons/pi";
 
 type UploadSectionProps = {
-  onStreamsLoaded: (streams: Stream[]) => void;
+  onStreamsLoaded: (fileCount: number, streams: ExtendedStream[]) => void;
 };
 
 export default function UploadSection({ onStreamsLoaded }: UploadSectionProps) {
   const handleUpload = async (files: File[]) => {
     if (files.length === 0) return;
-    console.log("handleUpload");
 
     try {
-      const allStreams: Stream[] = [];
+      const allStreams: ExtendedStream[] = [];
 
       for (const file of files) {
         const text = await file.text();
-        const parsedData: Stream[] = JSON.parse(text);
+        const parsedData: ExtendedStream[] = JSON.parse(text);
 
         // Validate that parsed data is an array of Stream objects
-        if (
-          !Array.isArray(parsedData) ||
-          !parsedData.every(
-            (item) =>
-              typeof item.endTime === "string" &&
-              typeof item.artistName === "string" &&
-              typeof item.trackName === "string" &&
-              typeof item.msPlayed === "number",
-          )
-        ) {
-          throw new Error("Invalid JSON format.");
+        if (!Array.isArray(parsedData)) {
+          throw new Error("Invalid JSON format. Must be array.");
         }
-
-        // Convert endTime to Date objects
+        for (const item of parsedData) {
+          if (typeof item.ts !== "string") {
+            console.error("item", item);
+            throw new Error("Invalid JSON format of item. Must have ts.");
+          }
+        }
+        // Convert timestamp to Date objects
         const streams = parsedData.map((item) => ({
           ...item,
-          endTime: new Date(item.endTime),
+          endTime: new Date(item.ts),
         }));
 
         allStreams.push(...streams);
       }
 
-      onStreamsLoaded(allStreams);
+      onStreamsLoaded(files.length, allStreams);
     } catch (err) {
       console.error(err);
     }
