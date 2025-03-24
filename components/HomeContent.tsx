@@ -241,13 +241,16 @@ export default function HomeContent() {
         <UploadSection onStreamsLoaded={onStreamsLoaded} />
         <div className="p-2 flex space-x-2 items-center">
           <Chip color={fileCount > 0 ? "success" : "default"}>
-            {fileCount} file{fileCount === 1 ? "" : "s"} uploaded
+            {fileCount} file{fileCount === 1 ? "" : "s"}
           </Chip>
           <Chip color={songRows.length > 0 ? "success" : "default"}>
             {songRows.length} song{songRows.length === 1 ? "" : "s"}
           </Chip>
           <Chip color={episodeStreams.length > 0 ? "success" : "default"}>
             {episodeStreams.length} episode{episodeStreams.length === 1 ? "" : "s"}
+          </Chip>
+          <Chip color={yearsRange.length > 0 ? "success" : "default"}>
+            {yearsRange.length} year{yearsRange.length === 1 ? "" : "s"}
           </Chip>
           <Chip color={songStreams.length > 0 ? "success" : "default"}>
             {songStreams.length} stream{songStreams.length === 1 ? "" : "s"}
