@@ -1,8 +1,8 @@
 export type SiteConfig = typeof siteConfig;
 
 export const siteConfig = {
-  name: "Spotify Stats Analyzer",
-  description: "Analyze your spotify stream data.",
+  name: "Spotify Streaming History Viewer",
+  description: "Upload and View Your Spotify Streaming History.",
   navItems: [
     {
       label: "Home",
