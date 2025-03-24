@@ -1,10 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   Chip,
   getKeyValue,
+  Input,
   Pagination,
+  Select,
+  SelectItem,
+  SharedSelection,
   Tab,
   Table,
   TableBody,
@@ -14,6 +18,7 @@ import {
   TableRow,
   Tabs,
 } from "@heroui/react";
+import { FaSearch } from "react-icons/fa";
 
 import UploadSection from "@/components/UploadSection";
 import { EpisodeStream, ExtendedStream, SongStream } from "@/types";
@@ -57,6 +62,15 @@ function getSongRows(songStreams: SongStream[]): SongRow[] {
   return rows;
 }
 
+function calculateYearRange(songStreams: SongStream[]): number[] {
+  const years = Array.from(
+    new Set(songStreams.map(({ ts }) => new Date(ts).getFullYear())),
+  ).sort();
+  console.log("years", years);
+
+  return years;
+}
+
 function isSongStream(stream: ExtendedStream): stream is ExtendedStream & SongStream {
   return (
     typeof stream.master_metadata_track_name === "string" &&
@@ -78,18 +92,56 @@ export default function HomeContent() {
   const [fileCount, setFileCount] = useState(0);
   const [songStreams, setSongStreams] = useState<SongStream[]>([]);
   const [episodeStreams, setEpisodeStreams] = useState<EpisodeStream[]>([]);
-
-  const songRows = getSongRows(songStreams);
-
   const [pageNumber, setPageNumber] = useState(1);
-  const pageSize = 20;
+  const [filterValue, setFilterValue] = useState("");
+  const hasSearchFilter = Boolean(filterValue);
+  const [filterColumn, setFilterColumn] = useState("");
+  const [yearsFilter, setYearsFilter] = useState<number[]>([]);
+  const hasYearsFilter = yearsFilter.length > 0;
+  const pageSize = 10;
+
+  const yearsRange = calculateYearRange(songStreams);
+  const filteredByYearSongStreams = useMemo(() => {
+    let filteredSongs = [...songStreams];
+
+    if (hasYearsFilter) {
+      filteredSongs = filteredSongs.filter((song) => {
+        return yearsFilter.includes(new Date(song.ts).getFullYear());
+      });
+    }
+
+    console.log("filteredByYearSongStreams", filteredSongs);
+
+    return filteredSongs;
+  }, [songStreams, yearsFilter]);
+
+  const songRows = getSongRows(filteredByYearSongStreams);
+
+  const filteredSongRows = useMemo(() => {
+    let filteredSongs = [...songRows];
+
+    if (hasSearchFilter) {
+      filteredSongs = filteredSongs.filter((song) => {
+        if (filterColumn === "name" || !filterColumn) {
+          return song.name.toLowerCase().includes(filterValue.toLowerCase());
+        } else if (filterColumn === "album") {
+          return song.album.toLowerCase().includes(filterValue.toLowerCase());
+        } else if (filterColumn === "artist") {
+          return song.artist.toLowerCase().includes(filterValue.toLowerCase());
+        }
+      });
+    }
+
+    return filteredSongs;
+  }, [songRows, filterValue]);
+
   const numPages = Math.ceil(songRows.length / pageSize);
-  const songRowsPage = useMemo(() => {
+  const filteredSongRowsPage = useMemo(() => {
     const start = (pageNumber - 1) * pageSize;
     const end = start + pageSize;
 
-    return songRows.slice(start, end);
-  }, [pageNumber, songRows]);
+    return filteredSongRows.slice(start, end);
+  }, [pageNumber, filteredSongRows]);
 
   const onStreamsLoaded = (fileCount: number, streams: ExtendedStream[]) => {
     setFileCount(fileCount);
@@ -121,6 +173,12 @@ export default function HomeContent() {
     setEpisodeStreams(episodeStreams);
   };
 
+  const filterableColumns = [
+    { key: "name", label: "Name" },
+    { key: "album", label: "Album" },
+    { key: "artist", label: "Artist" },
+  ];
+
   const mostPlayedSongsColumns = [
     { key: "name", label: "Name" },
     { key: "album", label: "Album" },
@@ -129,7 +187,7 @@ export default function HomeContent() {
     { key: "count", label: "Play Count" },
   ];
 
-  const mostPlayedSongsRows = songRowsPage.map((track, index) => ({
+  const mostPlayedSongsRows = filteredSongRowsPage.map((track, index) => ({
     key: index,
     name: track.name,
     album: track.album,
@@ -138,8 +196,47 @@ export default function HomeContent() {
     count: track.count,
   }));
 
+  const onClear = useCallback(() => {
+    setFilterValue("");
+    setPageNumber(1);
+  }, []);
+
+  const onSearchChange = useCallback((value: string) => {
+    if (value) {
+      setFilterValue(value);
+      setPageNumber(1);
+    } else {
+      setFilterValue("");
+    }
+  }, []);
+
+  const onFilterColumnSelectionChange = useCallback((keys: SharedSelection) => {
+    const value = keys.currentKey;
+
+    if (value) {
+      setFilterColumn(value);
+      setPageNumber(1);
+    } else {
+      setFilterColumn("name");
+    }
+  }, []);
+
+  const onFilterYearSelectionChange = useCallback((keys: SharedSelection) => {
+    const values = Array.from(keys).map(Number);
+
+    if (values.length > 0) {
+      setYearsFilter(values);
+      setPageNumber(1);
+    } else {
+      setYearsFilter([]);
+    }
+  }, []);
+
   return (
-    <div>
+    <div className="font-mono">
+      <p className="flex flex-row justify-center text-4xl">
+        Spotify Streaming History Viewer
+      </p>
       <div className="flex flex-row">
         <UploadSection onStreamsLoaded={onStreamsLoaded} />
         <div className="p-2 flex space-x-2 items-center">
@@ -160,6 +257,39 @@ export default function HomeContent() {
       <div className="mt-6">
         <Tabs aria-label="Options">
           <Tab key="songs" title="Songs">
+            <div className="flex flex-row flex-grow space-y-2 mb-2 items-center">
+              <Select
+                className="w-1/5"
+                label="Filter Years"
+                selectionMode="multiple"
+                size="md"
+                onSelectionChange={onFilterYearSelectionChange}
+              >
+                {yearsRange.map((year) => (
+                  <SelectItem key={year}>{year.toString()}</SelectItem>
+                ))}
+              </Select>
+              <Select
+                className="w-1/5"
+                defaultSelectedKeys={["name"]}
+                label="Filter Column"
+                size="md"
+                onSelectionChange={onFilterColumnSelectionChange}
+              >
+                {filterableColumns.map((column) => (
+                  <SelectItem key={column.key}>{column.label}</SelectItem>
+                ))}
+              </Select>
+              <Input
+                isClearable
+                className="w-4/5"
+                placeholder="Filter..."
+                startContent={<FaSearch />}
+                value={filterValue}
+                onClear={() => onClear()}
+                onValueChange={onSearchChange}
+              />
+            </div>
             <Table
               aria-label="Most Played Songs"
               bottomContent={
@@ -192,9 +322,6 @@ export default function HomeContent() {
                 )}
               </TableBody>
             </Table>
-          </Tab>
-          <Tab key="artists" title="Artists">
-            Coming soon!
           </Tab>
           <Tab key="episodes" title="Episodes">
             Coming soon!

@@ -26,17 +26,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className="min-h-screen bg-gray-100 text-gray-900">
-        {/* Navigation */}
-        <nav className="p-4 bg-white shadow-md">
-          <div className="max-w-4xl mx-auto flex justify-between items-center">
-            <Link href="/" className="text-xl font-bold text-blue-600">
-              Spotify Streaming Stats Analyzer
-            </Link>
-          </div>
-        </nav>
-
-        {/* Page Content */}
-        <main className="max-w-4xl mx-auto p-6">{children}</main>
+        <div className="flex flex-col grow">
+          <main>{children}</main>
+        </div>
       </body>
     </html>
   );
