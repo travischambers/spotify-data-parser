@@ -81,15 +81,15 @@ export default function HomeContent() {
 
   const songRows = getSongRows(songStreams);
 
-  const [page, setPage] = useState(1);
+  const [pageNumber, setPageNumber] = useState(1);
   const pageSize = 20;
-  const pages = Math.ceil(songRows.length / pageSize);
+  const numPages = Math.ceil(songRows.length / pageSize);
   const songRowsPage = useMemo(() => {
-    const start = (page - 1) * pageSize;
+    const start = (pageNumber - 1) * pageSize;
     const end = start + pageSize;
 
     return songRows.slice(start, end);
-  }, [page, songRows]);
+  }, [pageNumber, songRows]);
 
   const onStreamsLoaded = (fileCount: number, streams: ExtendedStream[]) => {
     setFileCount(fileCount);
@@ -169,9 +169,9 @@ export default function HomeContent() {
                     showControls
                     showShadow
                     color="secondary"
-                    page={page}
-                    total={pages}
-                    onChange={(page) => setPage(page)}
+                    page={pageNumber}
+                    total={numPages}
+                    onChange={(page) => setPageNumber(page)}
                   />
                 </div>
               }
